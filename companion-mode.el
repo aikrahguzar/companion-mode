@@ -33,8 +33,9 @@ real buffer is also displayed."
 
 (defun companion-mode--on-buffer-change (frame) "Function to delete a window on FRAME with an old companion buffer."
        (if-let ((companion (companion-mode--get-companion))
-                ((get-buffer-window companion)))
-           nil (companion-mode--delete frame) (when (eq (car companion-mode--companion) 'show) (companion-mode--display frame))))
+                (window (get-buffer-window companion)))
+           (set-window-parameter (frame-selected-window frame) 'companion-mode--window window)
+         (companion-mode--delete frame) (when (eq (car companion-mode--companion) 'show) (companion-mode--display frame))))
 
 (defun companion-mode--get-companion () "Get the companion buffer to the current buffer."
        (if (functionp (cdr companion-mode--companion))
