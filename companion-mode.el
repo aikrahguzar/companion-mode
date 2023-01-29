@@ -28,14 +28,16 @@
 The purpose of this mode is to display the companion buffer if and only if the
 real buffer is also displayed."
   :global t :lighter "Companion mode (global)" :group 'inspirehep
-  (if (not companion-mode) (remove-hook 'window-buffer-change-functions #'companion-mode--on-buffer-change)
-    (add-hook 'window-buffer-change-functions #'companion-mode--on-buffer-change)))
+  (if (not companion-mode)
+      (progn (remove-hook 'window-buffer-change-functions #'companion-mode--on-buffer-change)
+             (delete '(companion-mode--buffer . t) window-persistent-parameters))
+    (add-hook 'window-buffer-change-functions #'companion-mode--on-buffer-change)
+    (push '(companion-mode--buffer . t)  window-persistent-parameters)))
 
 (defun companion-mode--on-buffer-change (frame) "Function to delete a window on FRAME with an old companion buffer."
-       (if-let ((companion (companion-mode--get-companion))
-                (window (get-buffer-window companion)))
-           (set-window-parameter (frame-selected-window frame) 'companion-mode--window window)
-         (companion-mode--delete frame) (when (eq (car companion-mode--companion) 'show) (companion-mode--display frame))))
+       (let ((companion (companion-mode--get-companion)))
+         (unless (and companion (eq (window-parameter (frame-selected-window frame) 'companion-mode--buffer) companion)))
+             (companion-mode--delete frame) (companion-mode--display frame)))
 
 (defun companion-mode--get-companion () "Get the companion buffer to the current buffer."
        (if (functionp (cdr companion-mode--companion))
@@ -43,11 +45,13 @@ real buffer is also displayed."
          (cdr companion-mode--companion)))
 
 (defun companion-mode--display (&optional frame) "Display the companion to the buffer in selected window on FRAME."
-       (set-window-parameter (frame-selected-window frame) 'companion-mode--window (display-buffer (cdr companion-mode--companion))))
+       (when (eq (car companion-mode--companion) 'show) (display-buffer (cdr companion-mode--companion)))
+       (set-window-parameter (frame-selected-window frame) 'companion-mode--buffer (cdr companion-mode--companion)))
 
 (defun companion-mode--delete (&optional frame) "Delete window displaying companion to the buffer in selected window on FRAME."
-       (when-let ((comp-win (companion-mode-companion-window frame)))
-         (and (window-live-p comp-win) (delete-window comp-win))))
+       (when-let ((companion (window-parameter (frame-selected-window frame) 'companion-mode--buffer))
+                  (comp-win (get-buffer-window companion)))
+         (delete-window comp-win)))
 
 (defun companion-mode-set (buf &optional hide kill)
   "Set BUF to be the companion of current buffer.
@@ -64,9 +68,6 @@ If KILL is not nill, companion will be killed when the buffer is killed."
 (defun companion-mode-toggle-companion () "Toggle the display of companion buffer." (interactive)
        (setf (car companion-mode--companion)
              (if (eq (car companion-mode--companion) 'show) (progn (companion-mode--delete) 'hide) (progn (companion-mode--display) 'show))))
-
-(defun companion-mode-companion-window (&optional frame) "Return the window on FRAME where companion buffer is displayed."
-       (window-parameter (frame-selected-window frame) 'companion-mode--window))
 
 (provide 'companion-mode)
 ;;; companion-mode.el ends here
