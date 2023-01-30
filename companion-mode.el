@@ -69,5 +69,13 @@ If KILL is not nill, companion will be killed when the buffer is killed."
        (setf (car companion-mode--companion)
              (if (eq (car companion-mode--companion) 'show) (progn (companion-mode--delete) 'hide) (progn (companion-mode--display) 'show))))
 
+(defmacro companion-mode-with-companion (&rest body) "Run BODY with the repl window selected."
+          (let ((win-var (make-symbol "win"))
+                (companion-var (make-symbol "companion")))
+            `(if-let ((,companion-var (window-parameter (frame-selected-window) 'companion-mode--buffer))
+                      (,win-var (get-buffer-window ,companion-var)))
+                 (with-selected-window ,win-var ,@body)
+               (message "No companion found for current buffer."))))
+
 (provide 'companion-mode)
 ;;; companion-mode.el ends here
