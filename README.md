@@ -1,3 +1,5 @@
+# Moved to: https://codeberg.org/rahguzar/companion-mode
+
 # companion-mode: Pair buffers with a companion
 
 This package defines a global minor mode `companion-mode' whose purpose is to pair a companion popup buffer with a real buffer such when the real is displayed in a window, the companion buffer is also displayed and when it is not, the companion buffer disappears too.
